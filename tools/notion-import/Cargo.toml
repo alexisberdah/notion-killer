@@ -1,0 +1,29 @@
+[package]
+name = "notion-import"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "notion-import"
+path = "src/main.rs"
+
+[dependencies]
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# File processing
+zip = "2"
+csv = "1"
+pulldown-cmark = "0.12"
+
+# HTTP client for Notion API
+reqwest = { version = "0.12", features = ["json"] }
+oauth2 = "4"

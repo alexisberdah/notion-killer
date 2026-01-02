@@ -1,0 +1,150 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	:root {
+		--color-bg: theme('colors.white');
+		--color-text: theme('colors.surface.900');
+		--color-text-muted: theme('colors.surface.500');
+		--color-border: theme('colors.surface.200');
+	}
+
+	.dark {
+		--color-bg: theme('colors.surface.900');
+		--color-text: theme('colors.surface.100');
+		--color-text-muted: theme('colors.surface.400');
+		--color-border: theme('colors.surface.700');
+	}
+
+	* {
+		@apply border-[var(--color-border)];
+	}
+
+	body {
+		@apply text-[var(--color-text)] bg-[var(--color-bg)];
+	}
+}
+
+@layer components {
+	.btn {
+		@apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+	}
+
+	.btn-primary {
+		@apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+	}
+
+	.btn-secondary {
+		@apply btn bg-surface-100 text-surface-900 hover:bg-surface-200 focus:ring-surface-500 dark:bg-surface-800 dark:text-surface-100 dark:hover:bg-surface-700;
+	}
+
+	.btn-ghost {
+		@apply btn hover:bg-surface-100 dark:hover:bg-surface-800;
+	}
+
+	.input {
+		@apply w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-surface-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+	}
+
+	.label {
+		@apply block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1;
+	}
+
+	.card {
+		@apply bg-white dark:bg-surface-800 rounded-xl border shadow-sm;
+	}
+}
+
+/* Editor styles */
+.ProseMirror {
+	@apply outline-none min-h-[200px];
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+	@apply text-surface-400 dark:text-surface-500 float-left h-0 pointer-events-none;
+	content: attr(data-placeholder);
+}
+
+.ProseMirror h1 {
+	@apply text-4xl font-bold mt-8 mb-4;
+}
+
+.ProseMirror h2 {
+	@apply text-3xl font-bold mt-6 mb-3;
+}
+
+.ProseMirror h3 {
+	@apply text-2xl font-semibold mt-4 mb-2;
+}
+
+.ProseMirror p {
+	@apply my-2;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+	@apply pl-6 my-2;
+}
+
+.ProseMirror li {
+	@apply my-1;
+}
+
+.ProseMirror code {
+	@apply bg-surface-100 dark:bg-surface-800 px-1.5 py-0.5 rounded text-sm font-mono;
+}
+
+.ProseMirror pre {
+	@apply bg-surface-100 dark:bg-surface-800 p-4 rounded-lg my-4 overflow-x-auto;
+}
+
+.ProseMirror pre code {
+	@apply bg-transparent p-0;
+}
+
+.ProseMirror blockquote {
+	@apply border-l-4 border-surface-300 dark:border-surface-600 pl-4 italic my-4;
+}
+
+.ProseMirror hr {
+	@apply border-t my-8;
+}
+
+.ProseMirror img {
+	@apply max-w-full h-auto rounded-lg my-4;
+}
+
+/* Callout block */
+.callout {
+	@apply flex gap-3 p-4 rounded-lg bg-surface-100 dark:bg-surface-800 my-4;
+}
+
+.callout-icon {
+	@apply text-xl;
+}
+
+.callout-content {
+	@apply flex-1;
+}
+
+/* Toggle block */
+.toggle {
+	@apply my-2;
+}
+
+.toggle-header {
+	@apply flex items-center gap-2 cursor-pointer select-none;
+}
+
+.toggle-icon {
+	@apply transition-transform;
+}
+
+.toggle-icon.open {
+	@apply rotate-90;
+}
+
+.toggle-content {
+	@apply pl-6 mt-1;
+}

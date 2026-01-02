@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.svelte-kit/
+target/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+
+# Turbo
+.turbo/
+
+# Database
+*.db
+*.sqlite
+
+# Rust
+Cargo.lock
+**/*.rs.bk
+
+# Flutter
+packages/mobile/.dart_tool/
+packages/mobile/.packages
+packages/mobile/build/
+packages/mobile/*.iml
