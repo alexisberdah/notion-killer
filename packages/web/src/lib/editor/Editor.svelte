@@ -1,7 +1,14 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, tick } from 'svelte';
 	import { Editor } from '@tiptap/core';
 	import { createExtensions } from './extensions';
+	import { SlashCommands, type SlashCommand } from './extensions/slash-commands';
+	import {
+		createSlashSuggestion,
+		createSuggestionState,
+		type SuggestionState
+	} from './extensions/suggestion-plugin';
+	import SlashMenu from './components/SlashMenu.svelte';
 
 	interface Props {
 		content?: string;
@@ -25,11 +32,48 @@
 
 	let element: HTMLDivElement;
 	let editor: Editor | null = $state(null);
+	let suggestionState = $state<SuggestionState>(createSuggestionState());
+	let menuPosition = $state({ top: 0, left: 0 });
+
+	function handleStateChange(state: SuggestionState) {
+		suggestionState = state;
+
+		// Calculate menu position
+		if (state.clientRect) {
+			const rect = state.clientRect();
+			if (rect) {
+				menuPosition = {
+					top: rect.bottom + 8,
+					left: rect.left
+				};
+			}
+		}
+	}
+
+	function handleMenuSelect(command: SlashCommand) {
+		if (editor && suggestionState.range) {
+			command.command({ editor, range: suggestionState.range });
+		}
+		suggestionState = { ...suggestionState, isOpen: false };
+	}
+
+	function handleMenuClose() {
+		suggestionState = { ...suggestionState, isOpen: false };
+	}
 
 	onMount(() => {
+		const slashSuggestion = createSlashSuggestion({
+			onStateChange: handleStateChange
+		});
+
 		editor = new Editor({
 			element,
-			extensions: createExtensions({ placeholder }),
+			extensions: [
+				...createExtensions({ placeholder }),
+				SlashCommands.configure({
+					suggestion: slashSuggestion
+				})
+			],
 			content,
 			editable,
 			autofocus: autofocus ? 'end' : false,
@@ -96,15 +140,31 @@
 
 <div class="editor-wrapper {className}">
 	<div bind:this={element} class="editor-content"></div>
+
+	{#if suggestionState.isOpen}
+		<div class="slash-menu-container" style="top: {menuPosition.top}px; left: {menuPosition.left}px;">
+			<SlashMenu
+				query={suggestionState.query}
+				onSelect={handleMenuSelect}
+				onClose={handleMenuClose}
+			/>
+		</div>
+	{/if}
 </div>
 
 <style>
 	.editor-wrapper {
 		width: 100%;
+		position: relative;
 	}
 
 	.editor-content {
 		width: 100%;
+	}
+
+	.slash-menu-container {
+		position: fixed;
+		z-index: 100;
 	}
 
 	.editor-content :global(.ProseMirror) {
