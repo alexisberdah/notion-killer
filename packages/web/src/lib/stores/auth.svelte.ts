@@ -1,6 +1,6 @@
 import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
-import { api } from '$api';
+import { api } from '$lib/api';
 
 interface User {
 	id: string;

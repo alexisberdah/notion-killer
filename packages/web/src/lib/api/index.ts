@@ -41,6 +41,31 @@ class ApiClient {
 		return response.json();
 	}
 
+	// Generic methods for pages store
+	async get<T>(endpoint: string): Promise<T> {
+		return this.request<T>(endpoint);
+	}
+
+	async post<T>(endpoint: string, data: unknown): Promise<T> {
+		return this.request<T>(endpoint, {
+			method: 'POST',
+			body: JSON.stringify(data)
+		});
+	}
+
+	async patch<T>(endpoint: string, data: unknown): Promise<T> {
+		return this.request<T>(endpoint, {
+			method: 'PATCH',
+			body: JSON.stringify(data)
+		});
+	}
+
+	async delete<T>(endpoint: string): Promise<T> {
+		return this.request<T>(endpoint, {
+			method: 'DELETE'
+		});
+	}
+
 	auth = {
 		login: (email: string, password: string) =>
 			this.request<{
