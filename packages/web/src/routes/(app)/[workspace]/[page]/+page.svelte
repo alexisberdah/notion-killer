@@ -1,15 +1,13 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { pagesStore } from '$lib/stores/pages.svelte';
-	import { Editor } from '$lib/editor';
+	import { auth } from '$lib/stores/auth.svelte';
+	import { CollaborativeEditor } from '$lib/editor';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
-	import { onMount } from 'svelte';
+	import { crdtStore } from '$lib/crdt';
 
 	let workspaceId = $derived($page.params.workspace ?? '');
 	let pageId = $derived($page.params.page ?? '');
-
-	let content = $state('');
-	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	// Load page when pageId changes
 	$effect(() => {
@@ -22,24 +20,9 @@
 		try {
 			await pagesStore.loadPage(id);
 			await pagesStore.loadBreadcrumbs(id);
-			// Content would come from CRDT in the future
-			content = '';
 		} catch (e) {
 			console.error('Failed to load page:', e);
 		}
-	}
-
-	function handleContentUpdate(newContent: string) {
-		content = newContent;
-
-		// Debounced save
-		if (saveTimeout) {
-			clearTimeout(saveTimeout);
-		}
-		saveTimeout = setTimeout(() => {
-			// TODO: Save to CRDT/backend
-			console.log('Content updated:', newContent.slice(0, 100));
-		}, 1000);
 	}
 
 	async function handleTitleChange(newTitle: string) {
@@ -56,12 +39,19 @@
 		}
 	}
 
-	onMount(() => {
-		return () => {
-			if (saveTimeout) {
-				clearTimeout(saveTimeout);
-			}
-		};
+	function handleEditorUpdate() {
+		// Content is auto-saved via CRDT/IndexedDB
+		console.log('Editor updated, auto-saved to IndexedDB');
+	}
+
+	// Format last saved time
+	let lastSavedText = $derived(() => {
+		if (!crdtStore.lastSaved) return '';
+		const now = new Date();
+		const diff = now.getTime() - crdtStore.lastSaved.getTime();
+		if (diff < 60000) return 'Saved just now';
+		if (diff < 3600000) return `Saved ${Math.floor(diff / 60000)} min ago`;
+		return `Saved at ${crdtStore.lastSaved.toLocaleTimeString()}`;
 	});
 </script>
 
@@ -86,13 +76,22 @@
 		/>
 
 		<div class="editor-container">
-			<Editor
-				{content}
-				placeholder="Press '/' for commands, or start typing..."
-				onUpdate={handleContentUpdate}
-				autofocus
-			/>
+			{#key pageId}
+				<CollaborativeEditor
+					{pageId}
+					placeholder="Press '/' for commands, or start typing..."
+					userName={auth.user?.name ?? 'Anonymous'}
+					onUpdate={handleEditorUpdate}
+					autofocus
+				/>
+			{/key}
 		</div>
+
+		{#if lastSavedText()}
+			<div class="save-status">
+				{lastSavedText()}
+			</div>
+		{/if}
 	{:else if pagesStore.error}
 		<div class="error">
 			<h2>Page not found</h2>
@@ -104,6 +103,7 @@
 <style>
 	.page-editor {
 		min-height: 100vh;
+		position: relative;
 	}
 
 	.editor-container {
@@ -132,6 +132,18 @@
 		to {
 			transform: rotate(360deg);
 		}
+	}
+
+	.save-status {
+		position: fixed;
+		bottom: 1rem;
+		right: 1rem;
+		padding: 0.5rem 0.75rem;
+		background: var(--color-bg);
+		border: 1px solid var(--color-border);
+		border-radius: 0.375rem;
+		font-size: 0.75rem;
+		color: var(--color-text-muted);
 	}
 
 	.error {
