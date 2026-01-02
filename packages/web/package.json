@@ -44,6 +44,7 @@
     "@tiptap/extension-underline": "^2.27.1",
     "@tiptap/pm": "^2.27.1",
     "@tiptap/starter-kit": "^2.27.1",
+    "@tiptap/suggestion": "^2.27.1",
     "lowlight": "^3.3.0",
     "lucide-svelte": "^0.469.0",
     "y-indexeddb": "^9.0.12",
