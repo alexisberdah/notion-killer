@@ -51,9 +51,9 @@ async fn main() -> Result<()> {
         .connect(&config.database.url)
         .await?;
 
-    // Run migrations
-    tracing::info!("Running database migrations...");
-    sqlx::migrate!("./migrations").run(&db).await?;
+    // Migrations are run manually via: sqlx migrate run
+    // Or using the SQL file directly in production
+    tracing::info!("Database connected successfully");
 
     let state = AppState {
         db,

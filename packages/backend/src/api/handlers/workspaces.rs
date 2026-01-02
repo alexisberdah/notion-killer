@@ -51,17 +51,16 @@ pub async fn list_workspaces(
     State(state): State<AppState>,
     Extension(user_id): Extension<Uuid>,
 ) -> Result<Json<Vec<WorkspaceResponse>>> {
-    let workspaces = sqlx::query_as!(
-        Workspace,
+    let workspaces: Vec<Workspace> = sqlx::query_as(
         r#"
         SELECT w.id, w.name, w.icon, w.owner_id, w.settings, w.created_at, w.updated_at
         FROM workspaces w
         INNER JOIN workspace_members wm ON w.id = wm.workspace_id
         WHERE wm.user_id = $1 AND w.deleted_at IS NULL
         ORDER BY w.created_at DESC
-        "#,
-        user_id
+        "#
     )
+    .bind(user_id)
     .fetch_all(&state.db)
     .await?;
 
@@ -80,30 +79,29 @@ pub async fn create_workspace(
     // Create workspace and add owner as member in a transaction
     let mut tx = state.db.begin().await?;
 
-    let workspace = sqlx::query_as!(
-        Workspace,
+    let workspace: Workspace = sqlx::query_as(
         r#"
         INSERT INTO workspaces (id, name, icon, owner_id, settings)
         VALUES ($1, $2, $3, $4, '{}')
         RETURNING id, name, icon, owner_id, settings, created_at, updated_at
-        "#,
-        workspace_id,
-        payload.name,
-        payload.icon,
-        user_id
+        "#
     )
+    .bind(workspace_id)
+    .bind(&payload.name)
+    .bind(&payload.icon)
+    .bind(user_id)
     .fetch_one(&mut *tx)
     .await?;
 
     // Add owner as member with 'owner' role
-    sqlx::query!(
+    sqlx::query(
         r#"
         INSERT INTO workspace_members (workspace_id, user_id, role, invited_by)
         VALUES ($1, $2, 'owner', $2)
-        "#,
-        workspace_id,
-        user_id
+        "#
     )
+    .bind(workspace_id)
+    .bind(user_id)
     .execute(&mut *tx)
     .await?;
 
@@ -117,17 +115,16 @@ pub async fn get_workspace(
     Extension(user_id): Extension<Uuid>,
     Path(workspace_id): Path<Uuid>,
 ) -> Result<Json<WorkspaceResponse>> {
-    let workspace = sqlx::query_as!(
-        Workspace,
+    let workspace: Workspace = sqlx::query_as(
         r#"
         SELECT w.id, w.name, w.icon, w.owner_id, w.settings, w.created_at, w.updated_at
         FROM workspaces w
         INNER JOIN workspace_members wm ON w.id = wm.workspace_id
         WHERE w.id = $1 AND wm.user_id = $2 AND w.deleted_at IS NULL
-        "#,
-        workspace_id,
-        user_id
+        "#
     )
+    .bind(workspace_id)
+    .bind(user_id)
     .fetch_optional(&state.db)
     .await?
     .ok_or(AppError::NotFound)?;
@@ -144,24 +141,24 @@ pub async fn update_workspace(
     payload.validate().map_err(|e| AppError::Validation(e.to_string()))?;
 
     // Check if user has permission to update
-    let member = sqlx::query!(
+    let member: Option<(String,)> = sqlx::query_as(
         r#"
         SELECT role FROM workspace_members
         WHERE workspace_id = $1 AND user_id = $2
-        "#,
-        workspace_id,
-        user_id
+        "#
     )
+    .bind(workspace_id)
+    .bind(user_id)
     .fetch_optional(&state.db)
-    .await?
-    .ok_or(AppError::NotFound)?;
+    .await?;
 
-    if member.role != "owner" && member.role != "admin" {
+    let (role,) = member.ok_or(AppError::NotFound)?;
+
+    if role != "owner" && role != "admin" {
         return Err(AppError::Forbidden);
     }
 
-    let workspace = sqlx::query_as!(
-        Workspace,
+    let workspace: Workspace = sqlx::query_as(
         r#"
         UPDATE workspaces
         SET
@@ -170,11 +167,11 @@ pub async fn update_workspace(
             updated_at = NOW()
         WHERE id = $3 AND deleted_at IS NULL
         RETURNING id, name, icon, owner_id, settings, created_at, updated_at
-        "#,
-        payload.name,
-        payload.icon,
-        workspace_id
+        "#
     )
+    .bind(&payload.name)
+    .bind(&payload.icon)
+    .bind(workspace_id)
     .fetch_optional(&state.db)
     .await?
     .ok_or(AppError::NotFound)?;
@@ -188,30 +185,31 @@ pub async fn delete_workspace(
     Path(workspace_id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>> {
     // Only owner can delete
-    let workspace = sqlx::query!(
+    let workspace: Option<(Uuid,)> = sqlx::query_as(
         r#"
         SELECT owner_id FROM workspaces
         WHERE id = $1 AND deleted_at IS NULL
-        "#,
-        workspace_id
+        "#
     )
+    .bind(workspace_id)
     .fetch_optional(&state.db)
-    .await?
-    .ok_or(AppError::NotFound)?;
+    .await?;
 
-    if workspace.owner_id != user_id {
+    let (owner_id,) = workspace.ok_or(AppError::NotFound)?;
+
+    if owner_id != user_id {
         return Err(AppError::Forbidden);
     }
 
     // Soft delete
-    sqlx::query!(
+    sqlx::query(
         r#"
         UPDATE workspaces
         SET deleted_at = NOW()
         WHERE id = $1
-        "#,
-        workspace_id
+        "#
     )
+    .bind(workspace_id)
     .execute(&state.db)
     .await?;
 

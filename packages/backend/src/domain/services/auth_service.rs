@@ -5,7 +5,7 @@ use argon2::{
 use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
 use crate::{
@@ -33,10 +33,10 @@ impl<'a> AuthService<'a> {
     }
 
     pub async fn user_exists(&self, email: &str) -> Result<bool> {
-        let result = sqlx::query!(
-            r#"SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL"#,
-            email
+        let result: Option<(Uuid,)> = sqlx::query_as(
+            r#"SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL"#
         )
+        .bind(email)
         .fetch_optional(self.db)
         .await?;
 
@@ -47,43 +47,42 @@ impl<'a> AuthService<'a> {
         let password_hash = self.hash_password(password)?;
         let user_id = Uuid::new_v4();
 
-        let user = sqlx::query_as!(
-            User,
+        let user: User = sqlx::query_as(
             r#"
             INSERT INTO users (id, email, password_hash, name)
             VALUES ($1, $2, $3, $4)
             RETURNING id, email, password_hash, name, avatar_url, email_verified, created_at, updated_at
-            "#,
-            user_id,
-            email,
-            password_hash,
-            name
+            "#
         )
+        .bind(user_id)
+        .bind(email)
+        .bind(&password_hash)
+        .bind(name)
         .fetch_one(self.db)
         .await?;
 
         // Create a default workspace for the user
         let workspace_id = Uuid::new_v4();
-        sqlx::query!(
+        sqlx::query(
             r#"
             INSERT INTO workspaces (id, name, owner_id, settings)
             VALUES ($1, $2, $3, '{}')
-            "#,
-            workspace_id,
-            format!("{}'s Workspace", name),
-            user_id
+            "#
         )
+        .bind(workspace_id)
+        .bind(format!("{}'s Workspace", name))
+        .bind(user_id)
         .execute(self.db)
         .await?;
 
-        sqlx::query!(
+        sqlx::query(
             r#"
             INSERT INTO workspace_members (workspace_id, user_id, role, invited_by)
             VALUES ($1, $2, 'owner', $2)
-            "#,
-            workspace_id,
-            user_id
+            "#
         )
+        .bind(workspace_id)
+        .bind(user_id)
         .execute(self.db)
         .await?;
 
@@ -91,15 +90,14 @@ impl<'a> AuthService<'a> {
     }
 
     pub async fn verify_credentials(&self, email: &str, password: &str) -> Result<User> {
-        let user = sqlx::query_as!(
-            User,
+        let user: User = sqlx::query_as(
             r#"
             SELECT id, email, password_hash, name, avatar_url, email_verified, created_at, updated_at
             FROM users
             WHERE email = $1 AND deleted_at IS NULL
-            "#,
-            email
+            "#
         )
+        .bind(email)
         .fetch_optional(self.db)
         .await?
         .ok_or(AppError::InvalidCredentials)?;
@@ -117,15 +115,15 @@ impl<'a> AuthService<'a> {
 
         // Store refresh token hash in database
         let token_hash = self.hash_token(&refresh_token);
-        sqlx::query!(
+        sqlx::query(
             r#"
             INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
             VALUES ($1, $2, $3)
-            "#,
-            user_id,
-            token_hash,
-            Utc::now() + Duration::seconds(self.jwt_config.refresh_token_expiry)
+            "#
         )
+        .bind(user_id)
+        .bind(&token_hash)
+        .bind(Utc::now() + Duration::seconds(self.jwt_config.refresh_token_expiry))
         .execute(self.db)
         .await?;
 
@@ -143,35 +141,34 @@ impl<'a> AuthService<'a> {
         let token_hash = self.hash_token(refresh_token);
 
         // Check if token exists and is not revoked
-        let stored_token = sqlx::query!(
+        let stored_token: (Uuid, Uuid) = sqlx::query_as(
             r#"
             SELECT id, user_id FROM refresh_tokens
             WHERE token_hash = $1 AND revoked_at IS NULL AND expires_at > NOW()
-            "#,
-            token_hash
+            "#
         )
+        .bind(&token_hash)
         .fetch_optional(self.db)
         .await?
         .ok_or(AppError::InvalidToken)?;
 
+        let (token_id, stored_user_id) = stored_token;
+
         // Revoke old token
-        sqlx::query!(
-            r#"UPDATE refresh_tokens SET revoked_at = NOW() WHERE id = $1"#,
-            stored_token.id
-        )
-        .execute(self.db)
-        .await?;
+        sqlx::query(r#"UPDATE refresh_tokens SET revoked_at = NOW() WHERE id = $1"#)
+            .bind(token_id)
+            .execute(self.db)
+            .await?;
 
         // Get user
-        let user = sqlx::query_as!(
-            User,
+        let user: User = sqlx::query_as(
             r#"
             SELECT id, email, password_hash, name, avatar_url, email_verified, created_at, updated_at
             FROM users
             WHERE id = $1 AND deleted_at IS NULL
-            "#,
-            stored_token.user_id
+            "#
         )
+        .bind(stored_user_id)
         .fetch_one(self.db)
         .await?;
 
@@ -184,12 +181,10 @@ impl<'a> AuthService<'a> {
     pub async fn revoke_token(&self, refresh_token: &str) -> Result<()> {
         let token_hash = self.hash_token(refresh_token);
 
-        sqlx::query!(
-            r#"UPDATE refresh_tokens SET revoked_at = NOW() WHERE token_hash = $1"#,
-            token_hash
-        )
-        .execute(self.db)
-        .await?;
+        sqlx::query(r#"UPDATE refresh_tokens SET revoked_at = NOW() WHERE token_hash = $1"#)
+            .bind(&token_hash)
+            .execute(self.db)
+            .await?;
 
         Ok(())
     }

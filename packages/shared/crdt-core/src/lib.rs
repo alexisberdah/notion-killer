@@ -4,7 +4,8 @@
 //! web (via WASM), backend (native Rust), and mobile (via FFI).
 
 use serde::{Deserialize, Serialize};
-use yrs::{Doc, Map, Array, Text, Transact, ReadTxn, WriteTxn};
+use yrs::{Doc, ArrayRef, MapRef, TextRef, Transact, ReadTxn};
+use yrs::updates::encoder::Encode;
 
 /// Block types supported by the editor
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -57,17 +58,17 @@ impl CRDTDocument {
     }
 
     /// Get the blocks map
-    pub fn blocks(&self) -> Map {
+    pub fn blocks(&self) -> MapRef {
         self.doc.get_or_insert_map("blocks")
     }
 
     /// Get the block order array
-    pub fn block_order(&self) -> Array {
+    pub fn block_order(&self) -> ArrayRef {
         self.doc.get_or_insert_array("blockOrder")
     }
 
     /// Get the document title
-    pub fn title(&self) -> Text {
+    pub fn title(&self) -> TextRef {
         self.doc.get_or_insert_text("title")
     }
 
