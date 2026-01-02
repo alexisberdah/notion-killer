@@ -9,6 +9,7 @@
 		type SuggestionState
 	} from './extensions/suggestion-plugin';
 	import SlashMenu from './components/SlashMenu.svelte';
+	import BubbleMenuWrapper from './components/BubbleMenuWrapper.svelte';
 
 	interface Props {
 		content?: string;
@@ -140,6 +141,10 @@
 
 <div class="editor-wrapper {className}">
 	<div bind:this={element} class="editor-content"></div>
+
+	{#if editor}
+		<BubbleMenuWrapper {editor} />
+	{/if}
 
 	{#if suggestionState.isOpen}
 		<div class="slash-menu-container" style="top: {menuPosition.top}px; left: {menuPosition.left}px;">
