@@ -287,12 +287,20 @@ test: add unit tests for auth
 ## Roadmap
 
 - [x] **Phase 1**: Foundation (Auth, Workspaces, Basic UI)
-- [ ] **Phase 2**: Block Editor (All block types, Slash commands)
+- [x] **Phase 2**: Block Editor (Tiptap, Slash commands, Selection toolbar, CRDT sync)
 - [ ] **Phase 3**: Pages & Navigation (Hierarchy, Sidebar, Search)
 - [ ] **Phase 4**: Databases (Table, Kanban, Calendar, Gallery)
-- [ ] **Phase 5**: Collaboration (Real-time, Comments, Sharing)
+- [ ] **Phase 5**: Collaboration (Real-time WebSocket, Comments, Sharing)
 - [ ] **Phase 6**: Notion Import (API & ZIP)
 - [ ] **Phase 7**: Mobile Apps (Flutter iOS/Android)
+
+## Ideas & Future Features
+
+- [ ] **Mascot**: Add a cute animal mascot to give the app personality and make it more memorable
+- [ ] **AI Assistant**: Smart writing suggestions and auto-complete
+- [ ] **Templates**: Pre-built page templates for common use cases
+- [ ] **Plugins/Extensions**: Allow community extensions
+- [ ] **Self-hosting**: Easy Docker deployment for privacy-focused users
 
 ## License
 
