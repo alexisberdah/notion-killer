@@ -78,7 +78,7 @@ async fn main() -> Result<()> {
                 .post(handlers::workspaces::create_workspace),
         )
         .route(
-            "/api/v1/workspaces/:id",
+            "/api/v1/workspaces/{id}",
             get(handlers::workspaces::get_workspace)
                 .patch(handlers::workspaces::update_workspace)
                 .delete(handlers::workspaces::delete_workspace),
@@ -86,15 +86,15 @@ async fn main() -> Result<()> {
         // Page routes
         .route("/api/v1/pages", get(handlers::pages::list_pages).post(handlers::pages::create_page))
         .route(
-            "/api/v1/pages/:id",
+            "/api/v1/pages/{id}",
             get(handlers::pages::get_page)
                 .patch(handlers::pages::update_page)
                 .delete(handlers::pages::delete_page),
         )
-        .route("/api/v1/pages/:id/duplicate", post(handlers::pages::duplicate_page))
-        .route("/api/v1/pages/:id/move", post(handlers::pages::move_page))
-        .route("/api/v1/pages/:id/breadcrumbs", get(handlers::pages::get_breadcrumbs))
-        .route("/api/v1/workspaces/:id/page-tree", get(handlers::pages::get_page_tree))
+        .route("/api/v1/pages/{id}/duplicate", post(handlers::pages::duplicate_page))
+        .route("/api/v1/pages/{id}/move", post(handlers::pages::move_page))
+        .route("/api/v1/pages/{id}/breadcrumbs", get(handlers::pages::get_breadcrumbs))
+        .route("/api/v1/workspaces/{id}/page-tree", get(handlers::pages::get_page_tree))
         // Middleware
         .layer(TraceLayer::new_for_http())
         .layer(
