@@ -4,6 +4,58 @@ Ce document permet de valider le bon fonctionnement de l'application Notion Kill
 
 ---
 
+## Lancement de l'application
+
+### Prérequis
+
+- **macOS** avec [Homebrew](https://brew.sh) installé
+- **Node.js 20+** et **pnpm 9+**
+- **Rust 1.75+** (sera installé automatiquement si manquant)
+- **Docker** via Colima (sera installé automatiquement si manquant)
+
+### Démarrer l'application
+
+```bash
+# Depuis la racine du projet
+./scripts/start.sh
+```
+
+Ce script va automatiquement :
+1. Démarrer Docker (Colima) si nécessaire
+2. Lancer l'infrastructure (PostgreSQL, Redis, MinIO)
+3. Exécuter les migrations de base de données
+4. Démarrer le serveur backend (Rust)
+5. Démarrer le serveur frontend (SvelteKit)
+
+Une fois terminé, l'application est accessible sur :
+- **Frontend** : http://localhost:5173
+- **Backend API** : http://localhost:3000
+- **MinIO Console** : http://localhost:9001
+
+### Vérifier le statut
+
+```bash
+./scripts/status.sh
+```
+
+### Arrêter l'application
+
+```bash
+# Arrêter frontend et backend (garde Docker)
+./scripts/stop.sh
+
+# Tout arrêter (y compris Docker et Colima)
+./scripts/stop.sh --all
+```
+
+### Logs
+
+Les logs sont disponibles dans :
+- Backend : `/tmp/notion-killer-backend.log`
+- Frontend : `/tmp/notion-killer-frontend.log`
+
+---
+
 ## Informations de test
 
 | Champ | Valeur |
